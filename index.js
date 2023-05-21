@@ -10,7 +10,7 @@ app.use(express.json());
 // middleware
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion ,ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.lilwv8k.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -25,13 +25,28 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const toyCollection = client.db('mathWorms').collection('allToys');
+    // alltoys
     app.get('/allToys', async (req, res) => {
-        const cursor = toyCollection.find();
-        const result = await cursor.toArray();
+        
+        const result =await toyCollection.find().limit(20).toArray();
         res.send(result);
     })
+    app.get("/allToys/:id",async(req,res)=>{
+        const id=req.params.id;
+        const query={_id: new ObjectId(id)};
+        const result=await toyCollection.findOne(query);
+        res.send(result);
+  
+      })
+      app.get("/category/:categories",async(req,res)=>{
+          console.log(req.params.categories);
+          const query={sub_category: req.params.categories};
+          const result=await toyCollection.find(query).toArray();
+          res.send(result);
+      })
+    // alltoys
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
