@@ -27,6 +27,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const toyCollection = client.db('mathWorms').collection('allToys');
+    const addedtoyCollection = client.db('mathWorms').collection('addedToys');
     // alltoys
     app.get('/allToys', async (req, res) => {
         
@@ -47,6 +48,32 @@ async function run() {
           res.send(result);
       })
     // alltoys
+
+    // addToys
+    app.get('/addtoys', async (req, res) => {
+        console.log(req.query.email);
+        let query = {};
+        if (req.query?.email) {
+            query = { selleremail: req.query.email }
+        }
+        const result = await addedtoyCollection.find(query).toArray();
+        res.send(result);
+    })
+
+    app.post('/addtoys', async (req, res) => {
+        const addToy = req.body;
+        console.log(addToy);
+        const result = await addedtoyCollection.insertOne(addToy);
+        res.send(result);
+    });
+    app.delete('/addtoys/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) }
+        const result = await addedtoyCollection.deleteOne(query);
+        res.send(result);
+    })
+    
+    // addToys
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
