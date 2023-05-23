@@ -23,12 +23,26 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-  try {
+  
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const toyCollection = client.db('mathWorms').collection('allToys');
     const addedtoyCollection = client.db('mathWorms').collection('addedToys');
+    const indexkeys={name:1};
+    const indexOptions={name:"toyname"};
+    const result=await toyCollection.createIndex(indexkeys,indexOptions);
     // alltoys
+    app.get('/toyname/:text',async(req,res)=>{
+      const searchText=req.params.text;
+      const result=await toyCollection
+      .find({
+        $or:[
+          {name:{$regex: searchText, $options:"i"}}
+        ],
+      })
+      .toArray();
+      res.send(result)
+    });
     app.get('/allToys', async (req, res) => {
         
         const result =await toyCollection.find().limit(20).toArray();
@@ -48,7 +62,10 @@ async function run() {
           res.send(result);
       })
     // alltoys
-
+app.get('/test',async(req,res)=>{
+  console.log("testing")
+  res.send('testing')
+})
     // addToys
     app.get('/addtoys', async (req, res) => {
         console.log(req.query.email);
@@ -59,6 +76,13 @@ async function run() {
         const result = await addedtoyCollection.find(query).toArray();
         res.send(result);
     })
+    app.get("/addtoys/:id",async(req,res)=>{
+        const id=req.params.id;
+        const query={_id: new ObjectId(id)};
+        const result=await addedtoyCollection.findOne(query);
+        res.send(result);
+  
+      })
 
     app.post('/addtoys', async (req, res) => {
         const addToy = req.body;
@@ -72,22 +96,39 @@ async function run() {
         const result = await addedtoyCollection.deleteOne(query);
         res.send(result);
     })
+    app.put("/addtoys/:id",async(req,res)=>{
+        const id=req.params.id;
+        const updatedToy=req.body;
+        const filter={_id: new ObjectId(id)};
+        const options={upsert:true};
+        const updated={
+          $set:{
+          name:updatedToy.name,
+          price:updatedToy.price,
+         subcategory:updatedToy.subcategory,
+         quantity:updatedToy.quantity,
+         
+         
+  
+          }
+        }
+        const result=await addedtoyCollection.updateOne(filter,updated,options);
+        res.send(result);
+      })
     
     // addToys
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
+  } 
+
 run().catch(console.dir);
 
 
 app.get('/',(req,res)=>{
     res.send('math worms is running');
 });
+
 app.listen(port,()=>{
     console.log(`math worms is running on port ${port}`)
 });
